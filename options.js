@@ -170,13 +170,23 @@
     }
   }
 
+  let starsPollTimer = null;
+  let starsCountdownTimer = null;
+
+  function stopStarsPolling() {
+    if (starsPollTimer) { clearInterval(starsPollTimer); starsPollTimer = null; }
+    if (starsCountdownTimer) { clearInterval(starsCountdownTimer); starsCountdownTimer = null; }
+  }
+
   function handleStarsPay() {
     const btn = $("starsPayBtn");
     const statusEl = $("starsStatus");
     if (!btn || !statusEl) return;
 
+    stopStarsPolling();
     btn.disabled = true;
-    statusEl.textContent = "Создаю ссылку…";
+    btn.textContent = "⏳ Создаю…";
+    statusEl.textContent = "";
     statusEl.className = "stars-status";
 
     S.getInstallId(installId => {
@@ -184,6 +194,7 @@
         statusEl.textContent = "Ошибка: нет installId";
         statusEl.className = "stars-status err";
         btn.disabled = false;
+        btn.textContent = "⭐ Оплатить звёздами";
         return;
       }
 
@@ -194,50 +205,71 @@
             statusEl.textContent = data.err || "Ошибка создания инвойса";
             statusEl.className = "stars-status err";
             btn.disabled = false;
+            btn.textContent = "⭐ Оплатить звёздами";
             return;
           }
 
-          statusEl.textContent = "Открываю оплату…";
           let win = null;
-          try {
-            win = window.open(data.invoiceLink, "_blank");
-          } catch {}
-
+          try { win = window.open(data.invoiceLink, "_blank"); } catch {}
           if (!win) {
             statusEl.textContent = "Popup заблокирован. Открой вручную.";
             statusEl.className = "stars-status err";
             btn.disabled = false;
+            btn.textContent = "⭐ Оплатить звёздами";
             return;
           }
 
-          statusEl.textContent = "Оплати и вернись сюда";
+          btn.textContent = "❌ Отмена";
+          btn.disabled = false;
+          const origHandler = btn.onclick;
+          btn.onclick = function() {
+            stopStarsPolling();
+            btn.textContent = "⭐ Оплатить звёздами";
+            btn.disabled = false;
+            btn.onclick = origHandler;
+            statusEl.textContent = "";
+            statusEl.className = "stars-status";
+          };
+
+          let seconds = 120;
+          statusEl.textContent = "Жду оплату… " + seconds + " сек";
           statusEl.className = "stars-status";
 
-          let checks = 0;
-          const poll = setInterval(() => {
-            checks++;
-            if (checks > 30) {
-              clearInterval(poll);
-              statusEl.textContent = "Проверь статус обновив страницу";
+          starsCountdownTimer = setInterval(() => {
+            seconds--;
+            if (seconds <= 0) {
+              stopStarsPolling();
+              statusEl.textContent = "Время истекло. Попробуй снова.";
+              statusEl.className = "stars-status err";
+              btn.textContent = "⭐ Оплатить звёздами";
               btn.disabled = false;
+              btn.onclick = origHandler;
               return;
             }
+            statusEl.textContent = "Жду оплату… " + seconds + " сек";
+          }, 1000);
+
+          starsPollTimer = setInterval(() => {
             S.checkSubscription(sub => {
               if (sub.tier !== "free") {
-                clearInterval(poll);
+                stopStarsPolling();
                 currentTier = sub;
                 applyTierGating();
                 updateUpgradeUI();
-                statusEl.textContent = "Подписка активирована! ⭐";
+                statusEl.textContent = "✅ Подписка " + sub.tier.toUpperCase() + " активирована!";
                 statusEl.className = "stars-status ok";
+                btn.textContent = "✅ Готово";
+                btn.disabled = true;
+                btn.onclick = null;
               }
             });
-          }, 5000);
+          }, 3000);
         })
         .catch(e => {
           statusEl.textContent = "Сетевая ошибка: " + (e.message || e);
           statusEl.className = "stars-status err";
           btn.disabled = false;
+          btn.textContent = "⭐ Оплатить звёздами";
         });
     });
   }
