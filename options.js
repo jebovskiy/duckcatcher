@@ -156,6 +156,79 @@
     S.checkSubscription(sub => {
       currentTier = sub;
       applyTierGating();
+      updateUpgradeUI();
+    });
+  }
+
+  function updateUpgradeUI() {
+    const upgradeEl = $("tierUpgrade");
+    if (!upgradeEl) return;
+    if (currentTier.tier === "free") {
+      upgradeEl.hidden = false;
+    } else {
+      upgradeEl.hidden = true;
+    }
+  }
+
+  function handleStarsPay() {
+    const btn = $("starsPayBtn");
+    const statusEl = $("starsStatus");
+    if (!btn || !statusEl) return;
+
+    btn.disabled = true;
+    statusEl.textContent = "Создаю ссылку…";
+    statusEl.className = "stars-status";
+
+    S.getInstallId(installId => {
+      if (!installId) {
+        statusEl.textContent = "Ошибка: нет installId";
+        statusEl.className = "stars-status err";
+        btn.disabled = false;
+        return;
+      }
+
+      fetch(`https://myduckstats.vercel.app/api/stars-invoice?tier=pro&installId=${encodeURIComponent(installId)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok || !data.invoiceLink) {
+            statusEl.textContent = data.err || "Ошибка создания инвойса";
+            statusEl.className = "stars-status err";
+            btn.disabled = false;
+            return;
+          }
+
+          statusEl.textContent = "Открываю оплату…";
+          chrome.tabs.create({ url: data.invoiceLink, active: true }, () => {
+            statusEl.textContent = "Оплати и вернись сюда";
+            statusEl.className = "stars-status";
+
+            let checks = 0;
+            const poll = setInterval(() => {
+              checks++;
+              if (checks > 30) {
+                clearInterval(poll);
+                statusEl.textContent = "Проверь статус обновив страницу";
+                btn.disabled = false;
+                return;
+              }
+              S.checkSubscription(sub => {
+                if (sub.tier !== "free") {
+                  clearInterval(poll);
+                  currentTier = sub;
+                  applyTierGating();
+                  updateUpgradeUI();
+                  statusEl.textContent = "Подписка активирована! ⭐";
+                  statusEl.className = "stars-status ok";
+                }
+              });
+            }, 5000);
+          });
+        })
+        .catch(e => {
+          statusEl.textContent = "Сетевая ошибка";
+          statusEl.className = "stars-status err";
+          btn.disabled = false;
+        });
     });
   }
 
@@ -824,6 +897,8 @@
   }, 10000);
 
   setupSecretToggle();
+
+  $("starsPayBtn").addEventListener("click", handleStarsPay);
 
   I18N.init().then(() => {
     detectDevMode();
