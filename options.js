@@ -103,6 +103,62 @@
     }
   }
 
+  /* ---------- feature gating ---------- */
+
+  let currentTier = { tier: "free", features: {} };
+
+  function applyTierGating() {
+    const f = currentTier.features || {};
+    const isFree = currentTier.tier === "free";
+
+    const proRequired = [
+      "opt_autoSellEnabled",
+      "opt_autoSellMinCorn",
+      "opt_autoSellMinStars"
+    ];
+    for (const id of proRequired) {
+      const el = $(id);
+      if (!el) continue;
+      el.disabled = isFree && !f.autoSell;
+      const wrapper = el.closest(".field, .field-row, label");
+      if (wrapper) {
+        if (isFree && !f.autoSell) {
+          wrapper.classList.add("tier-locked");
+          wrapper.title = "Требуется Pro тариф";
+        } else {
+          wrapper.classList.remove("tier-locked");
+          wrapper.title = "";
+        }
+      }
+    }
+
+    const addBtn = $("addCustomRarity");
+    if (addBtn) {
+      const items = document.querySelectorAll(".custom-rarity-item");
+      const limit = f.maxRegexPatterns || 3;
+      addBtn.disabled = items.length >= limit;
+      if (items.length >= limit) {
+        addBtn.title = `Лимит ${limit} паттернов на вашем тарифе`;
+      } else {
+        addBtn.title = "";
+      }
+    }
+
+    const tierBadge = $("tierBadge");
+    if (tierBadge) {
+      const tierNames = { free: "Free", pro: "Pro", premium: "Premium" };
+      tierBadge.textContent = tierNames[currentTier.tier] || "Free";
+      tierBadge.className = `tier-badge tier-${currentTier.tier}`;
+    }
+  }
+
+  function loadTier() {
+    S.checkSubscription(sub => {
+      currentTier = sub;
+      applyTierGating();
+    });
+  }
+
   /* ---------- load / save ---------- */
 
   function load() {
@@ -217,7 +273,7 @@
     data.minPartnerLevel = Math.max(1, Math.min(5, Number($("opt_minPartnerLevel").value) || 1));
     data.maxPartnerLevel = Math.max(1, Math.min(5, Number($("opt_maxPartnerLevel").value) || 5));
 
-    data.customRarities = collectCustomRarities().slice(0, 20);
+    data.customRarities = collectCustomRarities().slice(0, currentTier.features?.maxRegexPatterns || 3);
     return data;
   }
 
@@ -772,6 +828,7 @@
   I18N.init().then(() => {
     detectDevMode();
     load();
+    loadTier();
     loadDumpInfo();
   });
 })();

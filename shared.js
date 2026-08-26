@@ -647,6 +647,72 @@
     }
   }
 
+  const TIER_FEATURES = {
+    free: {
+      maxRegexPatterns: 3,
+      historyDays: 7,
+      marketAlerts: false,
+      autoSell: false,
+      queuePriority: false,
+      apiAccess: false,
+      exportData: false
+    },
+    pro: {
+      maxRegexPatterns: 20,
+      historyDays: 90,
+      marketAlerts: true,
+      autoSell: true,
+      queuePriority: true,
+      apiAccess: false,
+      exportData: false
+    },
+    premium: {
+      maxRegexPatterns: Infinity,
+      historyDays: 90,
+      marketAlerts: true,
+      autoSell: true,
+      queuePriority: true,
+      apiAccess: true,
+      exportData: true
+    }
+  };
+
+  let cachedTier = null;
+  let tierFetchAt = 0;
+  const TIER_CACHE_MS = 30 * 60 * 1000;
+
+  function checkSubscription(cb) {
+    const now = Date.now();
+    if (cachedTier && now - tierFetchAt < TIER_CACHE_MS) {
+      return cb(cachedTier);
+    }
+    try {
+      getInstallId(id => {
+        if (!id) {
+          cachedTier = { tier: "free", features: TIER_FEATURES.free };
+          tierFetchAt = now;
+          return cb(cachedTier);
+        }
+        fetch(`https://myduckstats.vercel.app/api/subscription?installId=${encodeURIComponent(id)}`)
+          .then(r => r.json())
+          .then(data => {
+            const tier = data.tier || "free";
+            const features = TIER_FEATURES[tier] || TIER_FEATURES.free;
+            cachedTier = { tier, features };
+            tierFetchAt = Date.now();
+            cb(cachedTier);
+          })
+          .catch(() => {
+            cachedTier = { tier: "free", features: TIER_FEATURES.free };
+            tierFetchAt = Date.now();
+            cb(cachedTier);
+          });
+      });
+    } catch {
+      cb({ tier: "free", features: TIER_FEATURES.free });
+    }
+  }
+
   Object.assign(DC, {
     RARITY_LIST,
     RARITY_ALIASES,
@@ -695,6 +761,8 @@
     getInstallId,
     setDebug,
     getDebug,
-    log
+    log,
+    TIER_FEATURES,
+    checkSubscription
   });
 })();
