@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "Duck × My × Duck Catcher",
+  "version": "3.4.0",
+  "description": "Автоматически ищет утку нужной редкости в Telegram Web и открывает ссылку Duck × My × Duck.",
+  "update_url": "https://raw.githubusercontent.com/jebovskiy/duckcatcher/main/updates.xml",
+  "permissions": [
+    "storage",
+    "notifications",
+    "tabs",
+    "offscreen",
+    "downloads",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://web.telegram.org/*",
+    "https://*.duckmyduck.com/*",
+    "https://duckmyduck.com/*",
+    "https://myduckstats.vercel.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Duck × My × Duck Catcher",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.svg",
+      "48": "icon.svg",
+      "128": "icon.svg"
+    }
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icon.svg",
+    "48": "icon.svg",
+    "128": "icon.svg"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://web.telegram.org/*"],
+      "js": ["shared.js", "content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.duckmyduck.com/*", "https://duckmyduck.com/*"],
+      "js": ["miniapp-closer.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://*.duckmyduck.com/*", "https://duckmyduck.com/*"],
+      "js": ["network-sniffer.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://*.duckmyduck.com/*", "https://duckmyduck.com/*"],
+      "js": ["shared.js", "duckapp.js", "sniffer-relay.js", "market-monitor.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

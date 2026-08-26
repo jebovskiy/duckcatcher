@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Duck Catcher</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="pageHeader">Duck × My × Duck</h1>
+      <p class="dev-hint" id="devHint" data-i18n="dev.hint" hidden></p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="catch" data-i18n="tab.catch"></button>
+      <button class="tab" data-tab="smart" data-i18n="tab.smart"></button>
+      <button class="tab" data-tab="auto" data-i18n="tab.auto"></button>
+      <button class="tab" data-tab="history" data-i18n="tab.history"></button>
+      <button class="tab" data-tab="general" data-i18n="tab.general"></button>
+      <button class="tab dev-tab" data-tab="dev" data-i18n="tab.dev" hidden></button>
+    </nav>
+
+    <!-- ============ ЛОВЛЯ ============ -->
+    <section id="tab-catch" class="tab-content active">
+      <div class="group">
+        <h2><span data-i18n="g.rarity"></span><button class="tip" tabindex="0" data-i18n-tip="tip.rarity">?</button></h2>
+        <div id="rarityGrid" class="rarity-grid"></div>
+        <div class="button-row">
+          <button id="rarityAll" class="btn-secondary" data-i18n="rarity.selectAll"></button>
+          <button id="rarityNone" class="btn-secondary" data-i18n="rarity.selectNone"></button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2><span data-i18n="g.customRarity"></span><button class="tip" tabindex="0" data-i18n-tip="tip.customRarity">?</button></h2>
+        <div id="customRarityList" class="custom-rarity-list"></div>
+        <button id="addCustomRarity" class="btn-secondary" data-i18n="rarity.addCustom"></button>
+      </div>
+
+      <div class="group">
+        <h2><span data-i18n="g.chats"></span><button class="tip" tabindex="0" data-i18n-tip="tip.chats">?</button></h2>
+        <label class="row">
+          <span data-i18n="chats.mode"></span>
+          <select id="opt_chatFilterMode" class="select-input">
+            <option value="all" data-i18n="chats.modeAll"></option>
+            <option value="whitelist" data-i18n="chats.whitelist"></option>
+            <option value="blacklist" data-i18n="chats.blacklist"></option>
+          </select>
+        </label>
+        <textarea id="opt_chatFilterList" class="textarea-input" rows="5" data-i18n-ph="chats.placeholder"></textarea>
+      </div>
+    </section>
+
+    <!-- ============ SMART CATCH ============ -->
+    <section id="tab-smart" class="tab-content">
+      <div class="group">
+        <h2 data-i18n="g.smartCatch"></h2>
+        <label class="row"><span data-i18n="opt.smartCatchEnabled"></span><input id="opt_smartCatchEnabled" type="checkbox" class="toggle"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.myDuck"></h2>
+        <label class="row">
+          <span data-i18n="smart.myRarity"></span>
+          <select id="opt_myDuckRarity" class="select-input">
+            <option value="Common" data-i18n="rarity.common">Common</option>
+            <option value="Uncommon" data-i18n="rarity.uncommon">Uncommon</option>
+            <option value="Rare" data-i18n="rarity.rare">Rare</option>
+            <option value="Epic" data-i18n="rarity.epic">Epic</option>
+            <option value="Legendary" data-i18n="rarity.legendary">Legendary</option>
+            <option value="Mythic" data-i18n="rarity.mythic">Mythic</option>
+            <option value="Unique" data-i18n="rarity.unique">Unique</option>
+            <option value="Secret" data-i18n="rarity.secret">Secret</option>
+          </select>
+        </label>
+        <label class="row"><span data-i18n="smart.myLevel"></span><input id="opt_myDuckLevel" type="number" min="1" max="30" step="1" class="num-input"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.targets"></h2>
+        <h3 data-i18n="smart.targetRarities"></h3>
+        <div id="targetRarityGrid" class="rarity-grid"></div>
+        <div class="button-row">
+          <button id="targetRarityAll" class="btn-secondary" data-i18n="rarity.targetAll"></button>
+          <button id="targetRarityNone" class="btn-secondary" data-i18n="rarity.targetNone"></button>
+        </div>
+
+        <label class="row"><span data-i18n="smart.minLevel"></span><input id="opt_minPartnerLevel" type="number" min="1" max="5" step="1" class="num-input"></label>
+        <label class="row"><span data-i18n="smart.maxLevel"></span><input id="opt_maxPartnerLevel" type="number" min="1" max="5" step="1" class="num-input"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.filters"></h2>
+        <label class="row"><span data-i18n="opt.onlyNewLinks"></span><input id="opt_onlyNewLinks" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.avoidRepeatPartner"></span><input id="opt_avoidRepeatPartner" type="checkbox" class="toggle"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.sessionStats"></h2>
+        <div id="smartStats" class="stats-display"></div>
+        <button id="smartResetStats" class="btn-secondary" data-i18n="smart.resetStats"></button>
+      </div>
+    </section>
+
+    <!-- ============ АВТОМАТИЗАЦИЯ ============ -->
+    <section id="tab-auto" class="tab-content">
+      <div class="group">
+        <h2 data-i18n="g.main"></h2>
+        <label class="row"><span data-i18n="opt.enabled"></span><input id="opt_enabled" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.soundEnabled"></span><input id="opt_soundEnabled" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.autoOpen"></span><input id="opt_autoOpen" type="checkbox" class="toggle"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.modes"></h2>
+        <label class="row"><span data-i18n="opt.autoScroll"></span><input id="opt_autoScroll" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.autoPlay"></span><input id="opt_autoPlay" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.autoBreed"></span><input id="opt_autoBreed" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.closeAfterBreed"></span><input id="opt_closeAfterBreed" type="checkbox" class="toggle"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.sell"></h2>
+        <label class="row"><span data-i18n="opt.autoSellEnabled"></span><input id="opt_autoSellEnabled" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.minCorn"></span><input id="opt_autoSellMinCorn" type="number" min="0" step="1000" class="num-input"></label>
+        <label class="row"><span data-i18n="opt.minStars"></span><input id="opt_autoSellMinStars" type="number" min="0" step="10" class="num-input"></label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.schedule"></h2>
+        <div class="button-row" style="margin-bottom:10px">
+          <button id="pause15" class="btn-secondary">⏸ 15</button>
+          <button id="pause30b" class="btn-secondary">⏸ 30</button>
+          <button id="pause60b" class="btn-secondary">⏸ 60</button>
+          <button id="pauseResume" class="btn-danger" data-i18n="pause.resume"></button>
+        </div>
+        <div id="pauseStatus" class="pause-info"></div>
+        <label class="row"><span data-i18n="opt.scheduleEnabled"></span><input id="opt_scheduleEnabled" type="checkbox" class="toggle"></label>
+        <label class="row"><span data-i18n="opt.from"></span><input id="opt_scheduleFrom" type="time" class="time-input"></label>
+        <label class="row"><span data-i18n="opt.to"></span><input id="opt_scheduleTo" type="time" class="time-input"></label>
+      </div>
+    </section>
+
+    <!-- ============ ИСТОРИЯ И СТАТИСТИКА ============ -->
+    <section id="tab-history" class="tab-content">
+      <div class="group">
+        <h2 data-i18n="g.history"></h2>
+        <div class="filter-row">
+          <label class="row" style="border:none;padding:4px 0">
+            <span data-i18n="history.showFor"></span>
+            <select id="historyTimeRange" class="select-input">
+              <option value="0" data-i18n="time.all"></option>
+              <option value="8" data-i18n="h.8"></option>
+              <option value="12" selected data-i18n="h.12"></option>
+              <option value="24" data-i18n="h.24"></option>
+              <option value="72" data-i18n="h.72"></option>
+              <option value="168" data-i18n="h.168"></option>
+            </select>
+          </label>
+          <span class="filter-count" id="historyCount"></span>
+        </div>
+        <div id="historyList" class="history-list"></div>
+        <div class="button-row">
+          <button id="exportJSON" class="btn-secondary" data-i18n="export.json"></button>
+          <button id="exportCSV" class="btn-secondary" data-i18n="export.csv"></button>
+          <button id="clearHistory" class="btn-danger" data-i18n="clear.history"></button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.stats"></h2>
+        <div class="filter-row">
+          <label class="row" style="border:none;padding:4px 0">
+            <span data-i18n="stats.period"></span>
+            <select id="statsTimeRange" class="select-input">
+              <option value="0" data-i18n="time.all"></option>
+              <option value="8" data-i18n="h.8"></option>
+              <option value="12" selected data-i18n="h.12"></option>
+              <option value="24" data-i18n="h.24"></option>
+              <option value="72" data-i18n="h.72"></option>
+              <option value="168" data-i18n="h.168"></option>
+            </select>
+          </label>
+        </div>
+        <div id="statsContent" class="stats-grid"></div>
+        <div id="statsTimeline" class="stats-timeline"></div>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.sight"></h2>
+        <div id="sightStatsContent" class="stats-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ ОБЩЕЕ ============ -->
+    <section id="tab-general" class="tab-content">
+      <div class="group">
+        <h2 data-i18n="g.appearance"></h2>
+        <label class="row">
+          <span data-i18n="appearance.theme"></span>
+          <select id="opt_theme" class="select-input">
+            <option value="auto" data-i18n="theme.auto"></option>
+            <option value="dark" data-i18n="theme.dark"></option>
+            <option value="light" data-i18n="theme.light"></option>
+          </select>
+        </label>
+        <label class="row">
+          <span data-i18n="appearance.lang"></span>
+          <select id="opt_lang" class="select-input">
+            <option value="auto" data-i18n="lang.auto"></option>
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="group">
+        <h2><span data-i18n="g.share"></span><button class="tip" tabindex="0" data-i18n-tip="tip.share">?</button></h2>
+        <label class="row">
+          <span data-i18n="share.enabled"></span>
+          <input id="opt_shareEnabled" type="checkbox" class="toggle">
+        </label>
+        <input id="opt_shareEndpoint" type="url" class="textarea-input" style="margin-top:8px" data-i18n-ph="share.endpointPh">
+        <div class="button-row" style="margin-top:10px">
+          <button id="sendNow" class="btn-secondary" data-i18n="share.testBtn"></button>
+        </div>
+        <div id="shareStatus" class="save-status-inline"></div>
+      </div>
+    </section>
+
+    <!-- ============ DEV (скрыт) ============ -->
+    <section id="tab-dev" class="tab-content">
+      <div class="group">
+        <h2><span data-i18n="g.debugMode"></span><button class="tip" tabindex="0" data-i18n-tip="tip.dryRun">?</button></h2>
+        <label class="row"><span data-i18n="opt.dryRun"></span><input id="opt_dryRun" type="checkbox" class="toggle toggle-dryrun"></label>
+        <label class="row">
+          <span data-i18n="opt.debugLogs"></span>
+          <span class="row-right"><button class="tip" tabindex="0" data-i18n-tip="tip.debugLogs">?</button><input id="opt_debug" type="checkbox" class="toggle"></span>
+        </label>
+      </div>
+
+      <div class="group">
+        <h2 data-i18n="g.diag"></h2>
+        <div id="debugContent" class="debug-info"></div>
+      </div>
+
+      <div class="group">
+        <h2><span data-i18n="g.dump"></span><button class="tip" tabindex="0" data-i18n-tip="tip.dump">?</button></h2>
+        <label class="row" style="border:none;padding:4px 0">
+          <span data-i18n="dump.auto"></span>
+          <input id="opt_dumpAutoEnabled" type="checkbox" class="toggle">
+        </label>
+        <div class="button-row">
+          <button id="exportDump" class="btn-secondary" data-i18n="dump.download"></button>
+          <button id="clearDump" class="btn-danger" data-i18n="dump.clear"></button>
+        </div>
+        <div id="dumpInfo" class="dump-info"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="i18n.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Duck Catcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="popup">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="avatar">
+          <svg viewBox="0 0 120 120" width="48" height="48" aria-hidden="true">
+            <circle cx="60" cy="60" r="58" fill="#facc15"/>
+            <circle cx="60" cy="60" r="54" fill="#fbbf24"/>
+            <!-- body -->
+            <ellipse cx="58" cy="78" rx="26" ry="20" fill="#1a1a2e"/>
+            <!-- head -->
+            <circle cx="72" cy="48" r="18" fill="#1a1a2e"/>
+            <!-- eye white -->
+            <circle cx="78" cy="44" r="5" fill="#fff"/>
+            <!-- eye pupil -->
+            <circle cx="79" cy="44" r="2.5" fill="#1a1a2e"/>
+            <!-- eye highlight -->
+            <circle cx="80" cy="43" r="1" fill="#fff"/>
+            <!-- beak -->
+            <ellipse cx="94" cy="50" rx="12" ry="5" fill="#f97316"/>
+            <ellipse cx="94" cy="49" rx="10" ry="3.5" fill="#fb923c"/>
+            <!-- wing -->
+            <ellipse cx="48" cy="74" rx="14" ry="10" fill="#111827" transform="rotate(-15 48 74)"/>
+            <!-- feet -->
+            <path d="M48 96 L42 104 M48 96 L48 104 M48 96 L54 104" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="brand">
+          <h1>Duck Catcher</h1>
+          <div class="brand-sub">@DuckCatcher_bot</div>
+          <div class="brand-desc">Автоматический ловец уток</div>
+        </div>
+      </div>
+      <div class="status-indicator hidden" id="statusIndicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText"></span>
+      </div>
+      <a class="open-tg hidden" id="openTg" href="https://web.telegram.org" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+        Открой Telegram
+      </a>
+    </header>
+
+    <!-- Update banner -->
+    <div class="update-banner hidden" id="updateBanner">
+      <div class="update-icon">⬆</div>
+      <div class="update-info">
+        <div class="update-title">Доступно обновление <span id="updateVersion"></span></div>
+        <div class="update-desc">Скачайте и перезагрузите расширение</div>
+      </div>
+      <a class="update-btn" id="updateBtn" href="https://github.com/jebovskiy/duckcatcher/archive/refs/heads/main.zip" target="_blank" rel="noopener">Скачать</a>
+    </div>
+
+    <!-- Primary: CTA + target line -->
+    <div class="primary">
+      <button class="cta-btn" id="mainBtn">▶ Запустить лов</button>
+      <div class="target-line" id="targetLine"></div>
+    </div>
+
+    <!-- Compact toggles -->
+    <div class="toggles">
+      <div class="toggle-chip">
+        <div class="label">Smart Catch<span class="hint">умный подбор</span></div>
+        <div class="switch" id="swSmartCatch" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
+      <div class="toggle-chip">
+        <div class="label">Dry-Run<span class="hint">не кликать</span></div>
+        <div class="switch" id="swDryRun" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
+    </div>
+
+    <!-- Target rarity (collapsible) -->
+    <details class="target-details" id="targetDetails">
+      <summary id="targetSummary">
+        <div class="chip-row" id="targetChips"></div>
+        <span class="chevron">▾</span>
+      </summary>
+      <div class="target-body">
+        <div class="rarity-grid" id="rarityGrid"></div>
+        <div class="level-row">
+          <div class="level-field">
+            <label data-i18n="smart.minLevel"></label>
+            <input id="opt_minPartnerLevel" type="number" min="1" max="5" step="1" value="1">
+          </div>
+          <div class="level-field">
+            <label data-i18n="smart.maxLevel"></label>
+            <input id="opt_maxPartnerLevel" type="number" min="1" max="5" step="1" value="5">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Recent catches -->
+    <div class="section-label">
+      <span data-i18n="recent.title"></span>
+    </div>
+    <div class="catch-list" id="recentList"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a class="settings-link" href="#" id="openOptions">⚙ <span data-i18n="btn.options"></span></a>
+      <div class="footer-right">
+        <button class="theme-btn" id="themeBtn" title="Светлая/тёмная тема">☀</button>
+        <span class="version" id="versionLabel">v3.4.0</span>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- Wizard (unchanged) -->
+  <div id="wizard" class="wizard" hidden>
+    <div class="wiz-card">
+      <div class="wiz-step" data-step="1">
+        <div class="wiz-duck">🦆</div>
+        <h2 data-i18n="wiz.hi"></h2>
+        <p data-i18n="wiz.intro"></p>
+        <button class="btn-save wiz-btn" data-goto="2" data-i18n="wiz.next"></button>
+      </div>
+      <div class="wiz-step" data-step="2" hidden>
+        <h2 data-i18n="wiz.step2title"></h2>
+        <p class="wiz-sub" data-i18n="wiz.step2text"></p>
+        <div id="wizRarities" class="chips chips-big"></div>
+        <button class="btn-save wiz-btn" data-goto="3" data-i18n="wiz.next"></button>
+      </div>
+      <div class="wiz-step" data-step="3" hidden>
+        <h2 data-i18n="wiz.step3title"></h2>
+        <p class="wiz-sub" data-i18n="wiz.step3text"></p>
+        <label class="toggle-row"><span data-i18n="opt.autoOpen"></span><input id="wiz_autoOpen" type="checkbox" class="toggle" checked></label>
+        <label class="toggle-row"><span data-i18n="opt.autoBreed"></span><input id="wiz_autoBreed" type="checkbox" class="toggle" checked></label>
+        <label class="toggle-row"><span data-i18n="opt.soundEnabled"></span><input id="wiz_soundEnabled" type="checkbox" class="toggle" checked></label>
+        <button id="wizDone" class="btn-save wiz-btn" data-i18n="wiz.done"></button>
+        <button id="wizSkip" class="wiz-skip" data-i18n="wiz.skip"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

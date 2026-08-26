@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Duck Catcher — Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-left">
+        <svg viewBox="0 0 128 128" width="32" height="32">
+          <circle cx="64" cy="64" r="60" fill="#facc15"/>
+          <g transform="translate(24,22) scale(0.625)" fill="#1a1a2e">
+            <ellipse cx="52" cy="72" rx="32" ry="26"/>
+            <circle cx="82" cy="42" r="22"/>
+            <ellipse cx="110" cy="46" rx="18" ry="7" fill="#e67e22"/>
+            <circle cx="88" cy="37" r="4" fill="#fff"/>
+            <circle cx="89" cy="37" r="2" fill="#1a1a2e"/>
+          </g>
+        </svg>
+        <div>
+          <h1>Duck Catcher Dashboard</h1>
+          <p class="subtitle">DUCK × MY × DUCK — Мониторинг в реальном времени</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="live-dot" id="liveDot"></span>
+        <span class="live-label" id="liveLabel">Подключение...</span>
+      </div>
+    </header>
+
+    <section class="status-banner" id="statusBanner">
+      <div class="status-icon" id="statusIcon"></div>
+      <div class="status-body">
+        <div class="status-main" id="statusMain">Загрузка...</div>
+        <div class="status-detail" id="statusDetail"></div>
+      </div>
+    </section>
+
+    <section class="update-banner" id="updateBanner" hidden>
+      <div class="update-icon">⬆</div>
+      <div class="update-body">
+        <div class="update-main">Доступна новая версия: <span id="updateVersion"></span></div>
+        <div class="update-detail">Скачайте свежий архив с GitHub и перезагрузите расширение</div>
+      </div>
+      <a class="update-btn" href="https://github.com/jebovskiy/duckcatcher" target="_blank" rel="noopener">Скачать</a>
+    </section>
+
+    <section class="cards">
+      <div class="card">
+        <div class="card-value" id="statTotal">0</div>
+        <div class="card-label">Всего поймано</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="statLinks">0</div>
+        <div class="card-label">Ссылок на странице</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="statPlays">0</div>
+        <div class="card-label">Кликов «Играть»</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="statBreeds">0</div>
+        <div class="card-label">Разведений</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="statCloses">0</div>
+        <div class="card-label">Закрытий мини-аппа</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="statDialogs">0</div>
+        <div class="card-label">Диалогов обработано</div>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <section class="panel">
+        <h2>Поимки по редкости</h2>
+        <div class="chart-wrap">
+          <canvas id="chartRarity" width="500" height="260"></canvas>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Активность по дням</h2>
+        <div class="chart-wrap">
+          <canvas id="chartTimeline" width="500" height="260"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>История поимок</h2>
+        <div class="panel-actions">
+          <button id="btnExportJSON" class="btn-sm">JSON</button>
+          <button id="btnExportCSV" class="btn-sm">CSV</button>
+          <button id="btnClearHistory" class="btn-sm btn-danger">Очистить</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <select id="filterRarity">
+          <option value="all">Все редкости</option>
+          <option value="Common">Common</option>
+          <option value="Uncommon">Uncommon</option>
+          <option value="Rare">Rare</option>
+          <option value="Epic">Epic</option>
+          <option value="Legendary">Legendary</option>
+          <option value="Mythic">Mythic</option>
+          <option value="Unique">Unique</option>
+          <option value="Secret">Secret</option>
+        </select>
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Редкость</th>
+              <th>Текст сообщения</th>
+              <th>Время</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div class="empty-state" id="historyEmpty">Пока ничего не поймано</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Найденные ссылки на странице</h2>
+        <span class="badge" id="linksCount">0</span>
+      </div>
+      <div class="table-wrap">
+        <table id="linksTable">
+          <thead>
+            <tr>
+              <th>Start параметр</th>
+              <th>Текст сообщения</th>
+            </tr>
+          </thead>
+          <tbody id="linksBody"></tbody>
+        </table>
+        <div class="empty-state" id="linksEmpty">Ожидание Telegram Web...</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Мини-апп</h2>
+        <span class="badge" id="miniappBadge">—</span>
+      </div>
+      <div id="miniappInfo" class="miniapp-grid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Последние ошибки</h2>
+      </div>
+      <div id="errorLog" class="error-log">Ошибок нет</div>
+    </section>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
