@@ -198,34 +198,44 @@
           }
 
           statusEl.textContent = "Открываю оплату…";
-          chrome.tabs.create({ url: data.invoiceLink, active: true }, () => {
-            statusEl.textContent = "Оплати и вернись сюда";
-            statusEl.className = "stars-status";
+          let win = null;
+          try {
+            win = window.open(data.invoiceLink, "_blank");
+          } catch {}
 
-            let checks = 0;
-            const poll = setInterval(() => {
-              checks++;
-              if (checks > 30) {
+          if (!win) {
+            statusEl.textContent = "Popup заблокирован. Открой вручную.";
+            statusEl.className = "stars-status err";
+            btn.disabled = false;
+            return;
+          }
+
+          statusEl.textContent = "Оплати и вернись сюда";
+          statusEl.className = "stars-status";
+
+          let checks = 0;
+          const poll = setInterval(() => {
+            checks++;
+            if (checks > 30) {
+              clearInterval(poll);
+              statusEl.textContent = "Проверь статус обновив страницу";
+              btn.disabled = false;
+              return;
+            }
+            S.checkSubscription(sub => {
+              if (sub.tier !== "free") {
                 clearInterval(poll);
-                statusEl.textContent = "Проверь статус обновив страницу";
-                btn.disabled = false;
-                return;
+                currentTier = sub;
+                applyTierGating();
+                updateUpgradeUI();
+                statusEl.textContent = "Подписка активирована! ⭐";
+                statusEl.className = "stars-status ok";
               }
-              S.checkSubscription(sub => {
-                if (sub.tier !== "free") {
-                  clearInterval(poll);
-                  currentTier = sub;
-                  applyTierGating();
-                  updateUpgradeUI();
-                  statusEl.textContent = "Подписка активирована! ⭐";
-                  statusEl.className = "stars-status ok";
-                }
-              });
-            }, 5000);
-          });
+            });
+          }, 5000);
         })
         .catch(e => {
-          statusEl.textContent = "Сетевая ошибка";
+          statusEl.textContent = "Сетевая ошибка: " + (e.message || e);
           statusEl.className = "stars-status err";
           btn.disabled = false;
         });
@@ -898,7 +908,8 @@
 
   setupSecretToggle();
 
-  $("starsPayBtn").addEventListener("click", handleStarsPay);
+  const starsBtn = $("starsPayBtn");
+  if (starsBtn) starsBtn.addEventListener("click", handleStarsPay);
 
   I18N.init().then(() => {
     detectDevMode();

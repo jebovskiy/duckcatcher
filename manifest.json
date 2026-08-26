@@ -5,7 +5,7 @@
   "description": "Автоматически ищет утку нужной редкости в Telegram Web и открывает ссылку Duck × My × Duck.",
   "update_url": "https://raw.githubusercontent.com/jebovskiy/duckcatcher/main/updates.xml",
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://myduckstats.vercel.app https://api.telegram.org"
   },
   "permissions": [
     "storage",
