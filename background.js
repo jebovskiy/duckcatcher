@@ -23,8 +23,8 @@
 
   function handleDuckFound(message) {
     if (message?.type !== "DUCK_FOUND") return false;
-    const rarity = message.rarity || "";
-    const text = message.text ? ` (${message.text.slice(0, 60)})` : "";
+    const rarity = sanitizeNotificationText(message.rarity);
+    const text = message.text ? ` (${sanitizeNotificationText(message.text.slice(0, 60))})` : "";
     chrome.notifications
       .create({
         type: "basic",
@@ -43,7 +43,7 @@
         type: "basic",
         iconUrl: "icon.svg",
         title: "Разведение запущено",
-        message: `Нажато «${message.text || "разведение"}» в мини-аппе`
+        message: `Нажато «${sanitizeNotificationText(message.text || "разведение")}» в мини-аппе`
       })
       .catch(() => {});
     return true;
@@ -388,7 +388,20 @@
     chrome.action.setBadgeBackgroundColor({ color });
   }
 
+  const TRUSTED_ENDPOINTS = [
+    "https://myduckstats.vercel.app/api/stats"
+  ];
+
+  function sanitizeNotificationText(s) {
+    return String(s || "")
+      .replace(/[\u200b\u200c\u200d\u202a-\u202e\u2066-\u2069\ufeff]/g, "")
+      .slice(0, 120);
+  }
+
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (sender && sender.id && sender.id !== chrome.runtime.id) {
+    return false;
+  }
   if (message?.type === "NETWORK_SNIPPET") {
     return false;
   }
@@ -408,7 +421,7 @@
         type: "basic",
         iconUrl: "icon.svg",
         title: "Duck x My x Duck — Рынок",
-        message: String(message.text || "Событие рынка").slice(0, 200)
+        message: sanitizeNotificationText(message.text || "Событие рынка")
       })
       .catch(() => {});
     return false;
@@ -455,7 +468,7 @@
         type: "basic",
         iconUrl: "icon.svg",
         title: "Утка в очереди",
-        message: `${message.user}${posTxt}`
+        message: `${sanitizeNotificationText(message.user)}${posTxt}`
       })
       .catch(() => {});
     try {
@@ -622,21 +635,26 @@ function recordMarketSnapshot(data) {
   }
 }
 
+const INSTALL_ID_ROTATION_MS = 7 * 24 * 60 * 60 * 1000;
+
+function generateInstallId() {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+  }
+}
+
 function getBgInstallId(cb) {
   try {
-    chrome.storage.local.get({ installId: null }, r => {
-      if (r && r.installId) return cb(r.installId);
-      let id;
-      try {
-        id = crypto.randomUUID();
-      } catch {
-        id =
-          "id-" +
-          Date.now().toString(36) +
-          "-" +
-          Math.random().toString(36).slice(2, 10);
+    chrome.storage.local.get({ installId: null, installIdCreatedAt: 0 }, r => {
+      const id = r && r.installId;
+      const createdAt = r && r.installIdCreatedAt || 0;
+      if (id && createdAt && (Date.now() - createdAt < INSTALL_ID_ROTATION_MS)) {
+        return cb(id);
       }
-      chrome.storage.local.set({ installId: id }, () => cb(id));
+      const newId = generateInstallId();
+      chrome.storage.local.set({ installId: newId, installIdCreatedAt: Date.now() }, () => cb(newId));
     });
   } catch {
     cb(null);
@@ -718,6 +736,10 @@ function uploadStatsOnce(force) {
           /\/api\/public\/stats\/?$/i,
           "/api/stats"
         );
+        const endpointHost = (() => { try { return new URL(endpoint).origin; } catch { return ""; } })();
+        if (!TRUSTED_ENDPOINTS.some(trusted => endpointHost === new URL(trusted).origin)) {
+          return resolve({ sent: false, reason: "untrusted endpoint" });
+        }
         const now = Date.now();
         if (!force && now - lastUploadAt < UPLOAD_MIN_INTERVAL) {
           return resolve({ sent: false, reason: "throttled" });
@@ -737,6 +759,7 @@ function uploadStatsOnce(force) {
           } catch (e) {
             return resolve({ sent: false, reason: "payload: " + e.message });
           }
+          const body = JSON.stringify(payload);
           const ac = ("AbortController" in self) ? new AbortController() : null;
           const timer = ac
             ? setTimeout(() => ac.abort(), 10000)
@@ -744,8 +767,11 @@ function uploadStatsOnce(force) {
           try {
             fetch(endpoint, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
+              headers: {
+                "Content-Type": "application/json",
+                "X-Install-Id": id || ""
+              },
+              body,
               signal: ac ? ac.signal : undefined
             })
               .then(resp => {

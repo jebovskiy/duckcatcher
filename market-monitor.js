@@ -38,7 +38,8 @@
   const PRICE_KEY_RE = /(price|cost|bid|ask)/i;
   const BAD_KEY_RE =
     /(^id|id$|time|date|updated|created|count|total|sum|balance|wallet|level|xp|exp|seed|version|nonce|fee|percent|rate|rating|rank|index|num)/i;
-  const MAX_PRICE = 1e11;
+  const MAX_PRICE = 10000000;
+  const MIN_PRICE = 10;
 
   let debugOn = false;
   try {
@@ -139,7 +140,7 @@
           if (
             typeof cv === "number" &&
             Number.isFinite(cv) &&
-            cv >= 1 &&
+            cv >= MIN_PRICE &&
             cv <= MAX_PRICE
           ) {
             const p = childPath + "." + ck;
@@ -160,7 +161,7 @@
           !BAD_KEY_RE.test(key) &&
           (PRICE_KEY_RE.test(key) || classify(key))
         ) {
-          if (v >= 1 && v <= MAX_PRICE) {
+          if (v >= MIN_PRICE && v <= MAX_PRICE) {
             out.push({
               price: v,
               cur: classify(key) || localCtx.cur || "unknown",
@@ -243,9 +244,16 @@
   function extractBid(text) {
     const mSuf = text.match(/\d[\d\s\u00a0]*(?:[.,]\d+)?\s*[KkККмМmM]/);
     if (mSuf) return parseAbbrNum(mSuf[0]);
+    const curM = text.match(/(?:^|\s)(\d[\d\s\u00a0]{1,15})\s*(?:⭐|★|корн|corn)/i);
+    if (curM) {
+      const n = parseInt(curM[1].replace(/[\s\u00a0]/g, ""), 10);
+      if (Number.isFinite(n) && n >= MIN_PRICE) return n;
+    }
     const nums = [...text.matchAll(/(?:^|\D)(\d{2,7})(?=\D|$)/g)];
     if (!nums.length) return null;
-    return parseInt(nums[nums.length - 1][1], 10);
+    const last = parseInt(nums[nums.length - 1][1], 10);
+    if (last < MIN_PRICE || last > 3600) return null;
+    return last;
   }
 
   const trackedSales = new Map();
@@ -276,9 +284,14 @@
     const stars = extractCurBid(el, /\bstars?\b|-blue/i);
     if (corn != null || stars != null) return { corn, stars };
     const txt = el.textContent || "";
-    const cur = /звезд|★|⭐/i.test(txt) ? "stars" : "corn";
+    const hasStars = /звезд|★|⭐|stars?/i.test(txt);
+    const hasCorn = /корн|corn/i.test(txt);
+    if (!hasStars && !hasCorn) return {};
     const bid = extractBid(txt);
-    return bid != null ? { [cur]: bid } : {};
+    if (bid == null) return {};
+    if (hasStars && !hasCorn) return { stars: bid };
+    if (hasCorn && !hasStars) return { corn: bid };
+    return {};
   }
 
   function scanSales() {
@@ -468,20 +481,29 @@
         sum: 0,
         min: Infinity,
         max: -Infinity,
-        count: 0
+        count: 0,
+        values: []
       });
       b.sum += s.price;
       if (s.price < b.min) b.min = s.price;
       if (s.price > b.max) b.max = s.price;
       b.count++;
+      b.values.push(s.price);
     }
     const result = {};
     for (const [cur, b] of Object.entries(buckets)) {
+      b.values.sort((a, c) => a - c);
+      const median = b.values.length % 2
+        ? b.values[b.values.length >> 1]
+        : (b.values[(b.values.length >> 1) - 1] + b.values[b.values.length >> 1]) / 2;
+      const filtered = b.values.filter(v => v >= median / 5 && v <= median * 5);
+      if (!filtered.length) continue;
+      const fSum = filtered.reduce((a, c) => a + c, 0);
       result[cur] = {
-        avg: Math.round(b.sum / b.count),
-        min: Math.round(b.min),
-        max: Math.round(b.max),
-        count: b.count
+        avg: Math.round(fSum / filtered.length),
+        min: Math.round(filtered[0]),
+        max: Math.round(filtered[filtered.length - 1]),
+        count: filtered.length
       };
     }
     return result;

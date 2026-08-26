@@ -1,1 +1,3 @@
-# extension-only repo — no site/ or deploy/ needed
+site/node_modules/
+site/.env
+.agents/

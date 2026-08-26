@@ -1,15 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Duck × My × Duck Catcher",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "Автоматически ищет утку нужной редкости в Telegram Web и открывает ссылку Duck × My × Duck.",
   "update_url": "https://raw.githubusercontent.com/jebovskiy/duckcatcher/main/updates.xml",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
+  },
   "permissions": [
     "storage",
     "notifications",
     "tabs",
     "offscreen",
-    "downloads",
     "alarms"
   ],
   "host_permissions": [
@@ -54,13 +56,13 @@
       "js": ["network-sniffer.js"],
       "run_at": "document_start",
       "world": "MAIN",
-      "all_frames": true
+      "all_frames": false
     },
     {
       "matches": ["https://*.duckmyduck.com/*", "https://duckmyduck.com/*"],
       "js": ["shared.js", "duckapp.js", "sniffer-relay.js", "market-monitor.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": false
     }
   ]
 }

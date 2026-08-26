@@ -1097,7 +1097,16 @@
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "sync") return;
+      const ALLOWED_KEYS = new Set([
+        "enabled", "delay", "minDelay", "maxDelay", "mode", "queueMode", "sortBy",
+        "selectedRarities", "customRarities", "soundAlerts", "statsSharing",
+        "chatFilterMode", "chatFilterList", "filterBlacklist", "catchHistory",
+        "shareEnabled", "shareEndpoint", "autoScroll", "debug",
+        "marketEnabled", "marketAlerts", "marketAlertThreshold", "marketCooldown",
+        "marketWatchlist", "marketMaxAge"
+      ]);
       for (const [key, change] of Object.entries(changes)) {
+        if (!ALLOWED_KEYS.has(key)) continue;
         settings[key] = change.newValue;
       }
       if ("debug" in changes) S.setDebug(changes.debug.newValue);

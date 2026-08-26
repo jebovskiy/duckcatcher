@@ -171,6 +171,7 @@
         const hasFilter = selectedRarities && selectedRarities.length > 0;
         if (hasFilter && !selectedRarities.includes(cr.name)) continue;
         for (const pat of cr.patterns) {
+          if (!pat || typeof pat !== "string" || pat.length > 120) continue;
           try {
             const re = new RegExp(pat, "i");
             if (re.test(text)) return cr.name;
@@ -282,7 +283,7 @@
     const matched = list.some(entry => {
       const e = String(entry).toLowerCase().trim();
       if (!e) return false;
-      return chatId === e || chatId.includes(e) || e.includes(chatId);
+      return chatId === e || chatId.includes(e);
     });
     return settings.chatFilterMode === "whitelist" ? matched : !matched;
   }
@@ -343,12 +344,25 @@
   const MAX_HISTORY = 10000;
   const MAX_DUMP = 15000;
   const DUMP_AUTO_INTERVAL = 30 * 60 * 1000;
+  const HISTORY_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
+
+  function stripPII(s) {
+    return String(s || "")
+      .replace(/@\w+/g, "")
+      .replace(/\b\d{5,}\b/g, "")
+      .slice(0, 200);
+  }
+
+  function expireHistory(arr) {
+    const cutoff = Date.now() - HISTORY_EXPIRY_MS;
+    return Array.isArray(arr) ? arr.filter(e => (e.timestamp || 0) > cutoff) : [];
+  }
 
   async function getCatchHistory() {
     return new Promise(resolve => {
       try {
         chrome.storage.local.get({ catchHistory: [] }, r => {
-          resolve(Array.isArray(r.catchHistory) ? r.catchHistory : []);
+          resolve(expireHistory(r.catchHistory));
         });
       } catch {
         resolve([]);
@@ -362,7 +376,7 @@
       const history = await getCatchHistory();
       history.unshift({
         rarity: String(rarity),
-        text: String(text || "").slice(0, 200),
+        text: stripPII(text),
         timestamp: timestamp || Date.now(),
         mode
       });
@@ -375,10 +389,10 @@
 
       const ts = timestamp || Date.now();
       chrome.storage.local.get({ dumpHistory: [], dumpMeta: {} }, r => {
-        const dump = Array.isArray(r.dumpHistory) ? r.dumpHistory : [];
+        const dump = expireHistory(r.dumpHistory);
         dump.push({
           rarity: String(rarity),
-          text: String(text || "").slice(0, 200),
+          text: stripPII(text),
           timestamp: ts,
           caughtAt: new Date(ts).toISOString(),
           mode

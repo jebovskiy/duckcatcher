@@ -4,12 +4,13 @@
   console.log("[dd-sniffer] хуки установлены на", location.host);
 
   const SRC = "dd-sniffer";
+  const MSG_SECRET = "__dd_sniffer_v3__";
   const MAX_BODY = 150000;
 
   function emit(payload) {
     try {
       payload.ts = Date.now();
-      window.postMessage({ source: SRC, payload }, "*");
+      window.postMessage({ source: SRC, secret: MSG_SECRET, payload }, location.origin);
     } catch {
       // ignore
     }
