@@ -224,7 +224,8 @@
   });
 
   const WAIT_RE = /жд[её]т\s*твоей\s*ставки/i;
-  const SOLD_RE = /победител|продан|выиграл|куплен|уходит/i;
+  const SOLD_RE = /победител|выиграл|куплен|уходит/i;
+  const SOLD_FINAL_RE = /продано\s+другому\s+коллекционеру/i;
 
   function parseAbbrNum(raw) {
     const m = raw.match(/(\d+(?:[.,]\d+)?)\s*([KkКК]|[МmM]|млн|тыс)?/);
@@ -298,9 +299,22 @@
     try {
       if (!document.body) return;
       const roots = [];
+      const soldRoots = [];
       for (const el of document.querySelectorAll("div")) {
         const tc = el.textContent || "";
-        if (tc.length > 600 || !WAIT_RE.test(tc)) continue;
+        if (tc.length > 600) continue;
+        if (SOLD_FINAL_RE.test(tc)) {
+          let deeper = false;
+          for (const c of el.children) {
+            if (c.tagName === "DIV" && SOLD_FINAL_RE.test(c.textContent || "")) {
+              deeper = true;
+              break;
+            }
+          }
+          if (!deeper) soldRoots.push(el);
+          continue;
+        }
+        if (!WAIT_RE.test(tc)) continue;
         let deeper = false;
         for (const c of el.children) {
           if (c.tagName === "DIV" && WAIT_RE.test(c.textContent || "")) {
@@ -310,8 +324,21 @@
         }
         if (!deeper) roots.push(el);
       }
-      const nowSet = new Set(roots);
+
       const now = Date.now();
+
+      for (const el of soldRoots) {
+        const b = extractBids(el);
+        if (b.corn != null && !isDup("corn", b.corn, now)) {
+          samples.push({ t: now, price: b.corn, cur: "corn" });
+        }
+        if (b.stars != null && !isDup("stars", b.stars, now)) {
+          samples.push({ t: now, price: b.stars, cur: "stars" });
+        }
+      }
+      if (soldRoots.length) trimWindow();
+
+      const nowSet = new Set(roots);
 
       for (const [el, st] of trackedSales) {
         const stillWaiting = nowSet.has(el) && WAIT_RE.test(el.textContent || "");
